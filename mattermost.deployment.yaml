@@ -1,0 +1,72 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mattermost-app
+  labels:
+    app: mattermost-maher
+    tier: app
+  namespace: mattermost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mattermost-maher
+  template:
+    metadata:
+      name: mattermost-app
+      labels:
+        app: mattermost-maher
+        tier: app
+    spec:
+      #restartPolicy: Always
+      securityContext:
+        fsGroup: 200
+      containers:
+      - name: mattermost-app
+        image: "mattermost/mattermost-prod-app:5.10.0"
+        #ports:
+        #- containerPort: 80
+            #hostPort: 8000
+            #- containerPort: 8065
+            #hostPort: 8065
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mattermost.env
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: mattermost.env
+              key: db-port
+        - name: MM_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mattermost.env
+              key: mm-username
+        - name: MM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mattermost.env
+              key: mm-password
+        - name: MM_DBNAME
+          valueFrom:
+            secretKeyRef:
+              name: mattermost.env
+              key: mm-dbname
+        volumeMounts:
+        # optional persistent storage
+        - name: mattermost-data
+          mountPath: /mattermost/data
+        - name: etclocaltime
+          mountPath: /etc/localtime
+          readOnly: true
+      volumes:
+      # optional persistent storage
+      - name: mattermost-data
+        persistentVolumeClaim:
+          claimName: mattermost-db
+      - name: etclocaltime
+        hostPath:
+          path: /etc/localtime
